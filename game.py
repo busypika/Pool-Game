@@ -6,150 +6,121 @@ import numpy as np
 def collide(ball1, ball2):
     dX = ball1.X - ball2.X
     distance = np.sqrt(np.sum(dX**2))
-    if distance < ball1.size + ball2.size - 1:
-        #tangent = math.atan2(dy, dx)
-        #ball1.angle = 2*tangent - ball1.angle
-        #ball2.angle = 2*tangent - ball2.angle
-        #(ball1.speed, ball2.speed) = (ball2.speed, ball1.speed)
-
+    if distance < ball1.size + ball2.size:
         offset = distance - (ball1.size + ball2.size)
         ball1.X += (-dX/distance)*offset/2
         ball2.X += (dX/distance)*offset/2
-        print(np.sqrt(np.sum(ball1.X-ball2.X)**2))
-        ball1.x = ball1.X[0]
-        ball1.y = ball1.X[1]
-        ball2.x = ball2.X[0]
-        ball2.y = ball2.X[1]
-        #print((ball1.size + ball2.size)-np.sqrt(np.sum((ball1.X-ball2.X)**2)))
 
         dV1 = -(np.inner(ball1.V-ball2.V,ball1.X-ball2.X)/np.sum((ball1.X-ball2.X)**2))*(ball1.X-ball2.X)
         dV2 = -(np.inner(ball2.V-ball1.V,ball2.X-ball1.X)/np.sum((ball2.X-ball1.X)**2))*(ball2.X-ball1.X)
         ball1.V += dV1
         ball2.V += dV2
-        #ball1.speed = math.hypot(ball1.V[0],ball1.V[1])
-        #ball2.speed = math.hypot(ball2.V[0],ball2.V[1])
-        #ball1.angle = math.atan2(ball1.V[0],ball1.V[1])
-        #ball2.angle = math.atan2(ball2.V[0],ball2.V[1])
-        ball1.dx = ball1.V[0]
-        ball1.dy = ball1.V[1]
-        ball2.dx = ball2.V[0]
-        ball2.dy = ball2.V[1]
-
-        #angle = 0.5 * math.pi + tangent
-        #ball1.x += math.sin(angle)*offset/2
-        #ball1.y -= math.cos(angle)*offset/2
-        #ball2.x -= math.sin(angle)*offset/2
-        #ball2.y += math.cos(angle)*offset/2
-
 
 class Ball:
     def __init__(self, x, y, color, dx=0, dy=0, *args):
-        self.dt = 1000
-        self.x = SCALING*x
-        self.y = SCALING*y
+        self.X = np.asarray([np.float64(SCALING*x), np.float64(SCALING*y)])
         self.size = SCALING*1
         self.thickness = 0
         self.color = color
-        self.dx = SCALING*dx*self.dt
-        self.dy = SCALING*dy*self.dt
-        self.angle = math.atan2(self.dx, self.dy)
-        self.speed = math.hypot(self.dx, self.dy)
-        self.elasticity = SCALING*self.dt*2e-06
-        self.f = SCALING*self.dt*1.614e-10
+        self.V = np.asarray([np.float64(SCALING*dx), np.float64(-SCALING*dy)])
+        #self.angle = math.atan2(self.dx, self.dy)
+        #self.speed = math.hypot(self.dx, self.dy)
+        self.elasticity = SCALING*dT*2e-06
+        self.f = SCALING*dT*1.614e-10
         self.pos = []
-        self.pos.append(self.x)
-        self.pos.append(self.y)
-        self.X = np.asarray([np.float64(self.x), np.float64(self.y)])
-        self.V = np.asarray([np.float64(self.dx), np.float64(self.dy)])
+        self.pos.append(self.X[0])
+        self.pos.append(self.X[1])
+
 
     # Draw onto Screen
     def display(self):
         pygame.draw.circle(screen,
             self.color,
-            (int(self.x), int(self.y)),  # Pygame Only Draws Integer Coordinates
+            (int(self.X[0].item()), int(self.X[1].item())),  # Pygame Only Draws Integer Coordinates
             self.size,
             self.thickness)
 
-    def move(self):
-        self.X[0] += self.V[0]
-        self.X[1] -= self.V[1]
-        self.x = self.X[0]
-        self.y = self.X[1]
+    def move(self, *args):
+        self.X += self.V*dT
 
     def bounce(self):
-        if self.x > width - self.size:
-            self.x = 2*(width - self.size) - self.x
-            self.dx *= -1
-            self.angle = math.atan2(self.dx, self.dy)
-            self.speed -= self.elasticity
-            self.dx = math.sin(self.angle) * self.speed
-            self.dy = math.cos(self.angle) * self.speed
-            self.X = np.asarray([np.float64(self.x), np.float64(self.y)])
-            self.V = np.asarray([np.float64(self.dx), np.float64(self.dy)])
+        if self.X[0] > width - self.size:
+            self.X[0] = 2*(width - self.size) - self.X[0]
+            self.V[0] *= -1
+            speed = np.sqrt(np.sum(self.V)**2)*dT
+            speed_prime = speed - self.elasticity
+            if speed_prime >=0:
+                product = speed_prime / speed
+                self.V[0] *= product
+                self.V[1] *= product
+            else:
+                self.V[0] *= 0
+                self.V[1] *= 0
 
-        elif self.x < self.size:
-            self.x = 2*self.size - self.x
-            self.dx *= -1
-            self.angle = math.atan2(self.dx, self.dy)
-            self.speed -= self.elasticity
-            self.dx = math.sin(self.angle) * self.speed
-            self.dy = math.cos(self.angle) * self.speed
-            self.X = np.asarray([np.float64(self.x), np.float64(self.y)])
-            self.V = np.asarray([np.float64(self.dx), np.float64(self.dy)])
+        elif self.X[0] < self.size:
+            self.X[0] = 2*self.size - self.X[0]
+            self.V[0] *= -1
+            speed = np.sqrt(np.sum(self.V)**2)*dT
+            speed_prime = speed - self.elasticity
+            if speed_prime >=0:
+                product = speed_prime / speed
+                self.V[0] *= product
+                self.V[1] *= product
+            else:
+                self.V[0] *= 0
+                self.V[1] *= 0
 
-        if self.y > height - self.size:
-            self.y = 2*(height - self.size) - self.y
-            self.dy *= -1
-            self.angle = math.atan2(self.dx, self.dy)
-            self.speed -= self.elasticity
-            self.dx = math.sin(self.angle) * self.speed
-            self.dy = math.cos(self.angle) * self.speed
-            self.X = np.asarray([np.float64(self.x), np.float64(self.y)])
-            self.V = np.asarray([np.float64(self.dx), np.float64(self.dy)])
+        if self.X[1] > height - self.size:
+            self.X[1] = 2*(height - self.size) - self.X[1]
+            self.V[1] *= -1
+            speed = np.sqrt(np.sum(self.V)**2)*dT
+            speed_prime = speed - self.elasticity
+            if speed_prime >=0:
+                product = speed_prime / speed
+                self.V[0] *= product
+                self.V[1] *= product
+            else:
+                self.V[0] *= 0
+                self.V[1] *= 0
+
+        elif self.X[1] < self.size:
+            self.X[1] = 2*self.size - self.X[1]
+            self.V[1] *= -1
+            speed = np.sqrt(np.sum(self.V)**2)*dT
+            speed_prime = speed - self.elasticity
+            if speed_prime >=0:
+                product = speed_prime / speed
+                self.V[0] *= product
+                self.V[1] *= product
+            else:
+                self.V[0] *= 0
+                self.V[1] *= 0
 
 
-        elif self.y < self.size:
-            self.y = 2*self.size - self.y
-            self.dy *= -1
-            self.angle = math.atan2(self.dx, self.dy)
-            self.speed -= self.elasticity
-            self.dx = math.sin(self.angle) * self.speed
-            self.dy = math.cos(self.angle) * self.speed
-            self.X = np.asarray([np.float64(self.x), np.float64(self.y)])
-            self.V = np.asarray([np.float64(self.dx), np.float64(self.dy)])
 
-        if self.speed <= 0:
-            self.speed = 0
-            self.dx = 0
-            self.dy = 0
-            self.V = np.asarray([np.float64(self.dx), np.float64(self.dy)])
-
-
-
-    def friction(self):
-        self.pos.append(self.x)
-        self.pos.append(self.y)
-        if math.hypot((self.pos[2] - self.pos[0]), (self.pos[3] - self.pos[1])) >= 1:
-            self.angle = math.atan2(self.dx, self.dy)
-            self.speed = math.hypot(self.dx, self.dy)
-            self.speed -= self.f
-            self.dx = math.sin(self.angle) * self.speed
-            self.dy = math.cos(self.angle) * self.speed
-            self.V = np.asarray([np.float64(self.dx), np.float64(self.dy)])
-            if self.speed <=0:
-                self.speed = 0
-                self.dx = 0
-                self.dy = 0
-                self.V = np.asarray([np.float64(self.dx), np.float64(self.dy)])
+    def friction(self, *args):
+        self.pos.append(self.X[0])
+        self.pos.append(self.X[1])
+        if math.hypot((self.pos[2] - self.pos[0]), (self.pos[3] - self.pos[1])) >= SCALING*1:
+            speed = np.sqrt(np.sum(self.V)**2)*dT
+            speed_prime = speed - self.f
+            if speed_prime >=0:
+                product = speed_prime / speed
+                self.V[0] *= product
+                self.V[1] *= product
+            else:
+                self.V[0] *= 0
+                self.V[1] *= 0
             for _ in range(4):
                 self.pos.pop()
-            self.pos.append(self.x)
-            self.pos.append(self.y)
+            self.pos.append(self.X[0])
+            self.pos.append(self.X[1])
         else:
             for _ in range(2):
                 self.pos.pop()
 
 SCALING = 10
+dT = 1000
 # Setting Background Color to Green
 background_colour = (2, 178, 106)
 # Width, Height, Caption
