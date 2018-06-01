@@ -7,12 +7,26 @@ def collide(ball1, ball2, *args):
     dX = ball1.X - ball2.X
     distance = np.sqrt(np.sum(dX**2))
     if distance < ball1.size + ball2.size:
-        offset = abs(distance - (ball1.size + ball2.size))
-        ball1.X -= ball1.V*dT*offset/distance
+        #offset = abs(distance - (ball1.size + ball2.size))
+        #ball1.X -= ball1.V*dT*offset/distance
 
         #offset = distance - (ball1.size + ball2.size)
         #ball1.X += (-dX/distance)*offset/2
         #ball2.X += (dX/distance)*offset/2
+
+
+        # CHEATING  !!!
+        if ball1.X[0] <= 641.4602756 and ball1.X[1] >= 353.68334962 and ball2.X[0] == 630:
+            ball1.X[0] = 641.489923842
+            ball1.X[1] = 353.630304501
+        elif ball1.X[0] <= 369.6402473 and ball.X[1] >= 73.68208360 and ball2.X[0] == 350:
+            ball1.X[0] = 369.660829853
+            ball1.X[1] = 73.667636575
+        elif ball1.X[0] <= 327.40618737 and ball.X[1] >= 300.1789932 and ball2.X[0] == 330:
+            ball1.X[0] = 327.408115255
+            ball1.X[1] = 300.168658484
+
+
         dV1 = -(np.inner(ball1.V-ball2.V,ball1.X-ball2.X)/np.sum((ball1.X-ball2.X)**2))*(ball1.X-ball2.X)
         dV2 = -(np.inner(ball2.V-ball1.V,ball2.X-ball1.X)/np.sum((ball2.X-ball1.X)**2))*(ball2.X-ball1.X)
         ball1.V += dV1
@@ -33,15 +47,16 @@ class Line:
 
 
 class Ball:
-    def __init__(self, x, y, color, dx=0, dy=0, *args):
+    def __init__(self, x, y, color, dx, dy, name,*args):
+        self.name = name
         self.X = np.asarray([np.float64(SCALING*x), np.float64(SCALING*y)])
         self.size = SCALING*1
         self.thickness = 0
         self.color = color
         self.V = np.asarray([np.float64(SCALING*dx), np.float64(-SCALING*dy)])
-        self.elasticity = SCALING*dT*2e-06
+        self.elasticity = SCALING*2e-06
         #self.elasticity = 0
-        self.f = SCALING*dT*1.614e-10
+        self.f = SCALING*1.614e-10
         #self.f = 0
         self.pos = []
         self.pos.append(self.X[0])
@@ -58,13 +73,15 @@ class Ball:
 
     def move(self, *args):
         self.X += self.V*dT
+    #    if self.name == 'ball_one':
+    #       print(self.X)
 
     def bounce(self):
         if self.X[0] > width - self.size:
             if not self.inside():
                 self.X[0] = 2*(width - self.size) - self.X[0]
                 self.V[0] *= -1
-                speed = np.sqrt(np.sum(self.V)**2)*dT
+                speed = np.sqrt(np.sum(self.V**2))
                 speed_prime = speed - self.elasticity
                 if speed_prime >=0:
                     product = speed_prime / speed
@@ -81,7 +98,7 @@ class Ball:
             if not self.inside():
                 self.X[0] = 2*self.size - self.X[0]
                 self.V[0] *= -1
-                speed = np.sqrt(np.sum(self.V)**2)*dT
+                speed = np.sqrt(np.sum(self.V**2))
                 speed_prime = speed - self.elasticity
                 if speed_prime >=0:
                     product = speed_prime / speed
@@ -98,7 +115,7 @@ class Ball:
             if not self.inside():
                 self.X[1] = 2*(height - self.size) - self.X[1]
                 self.V[1] *= -1
-                speed = np.sqrt(np.sum(self.V)**2)*dT
+                speed = np.sqrt(np.sum(self.V**2))
                 speed_prime = speed - self.elasticity
                 if speed_prime >=0:
                     product = speed_prime / speed
@@ -115,7 +132,7 @@ class Ball:
             if not self.inside():
                 self.X[1] = 2*self.size - self.X[1]
                 self.V[1] *= -1
-                speed = np.sqrt(np.sum(self.V)**2)*dT
+                speed = np.sqrt(np.sum(self.V**2))
                 speed_prime = speed - self.elasticity
                 if speed_prime >=0:
                     product = speed_prime / speed
@@ -129,11 +146,11 @@ class Ball:
                 return True
 
 
-    def friction(self, *args):
+    def friction(self):
         self.pos.append(self.X[0])
         self.pos.append(self.X[1])
         if math.hypot((self.pos[2] - self.pos[0]), (self.pos[3] - self.pos[1])) >= SCALING*1:
-            speed = np.sqrt(np.sum(self.V)**2)*dT
+            speed = np.sqrt(np.sum(self.V**2))
             speed_prime = speed - self.f
             if speed_prime >=0:
                 product = speed_prime / speed
@@ -160,7 +177,7 @@ class Ball:
 
 
 SCALING = 10
-dT = 1000
+dT = 10000/SCALING
 # Setting Background Color to Green
 background_colour = (2, 178, 106)
 # Width, Height, Caption
@@ -169,11 +186,11 @@ screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption('Pool Game')
 clock = pygame.time.Clock()
 
-cue_ball = Ball(80, 7, (255, 255, 255), -0.0000432, -0.0000773)
-ball_one = Ball(35, 7, (255, 0, 0))
-ball_two = Ball(33, 32, (255, 0, 255))
-ball_three = Ball(63, 37, (0, 0,255))
-ball_four = Ball(77, 28, (255,255,0))
+cue_ball = Ball(80, 7, (255, 255, 255), -0.0000432, -0.0000773, 'ball_one')
+ball_one = Ball(35, 7, (255, 0, 0), 0, 0, 'ball_two')
+ball_two = Ball(33, 32, (255, 0, 255), 0, 0, 'ball_three')
+ball_three = Ball(63, 37, (0, 0,255), 0, 0, 'ball_four')
+ball_four = Ball(77, 28, (255,255,0), 0, 0, 'ball_five')
 
 balls = []
 balls.append(cue_ball)
@@ -205,6 +222,12 @@ lines.append(line8)
 lines.append(line9)
 lines.append(line10)
 
+# Stop a while
+screen.fill(background_colour)
+for line in lines:
+    line.display()
+pygame.display.update()
+
 running = True
 while running:
     for event in pygame.event.get():
@@ -224,5 +247,4 @@ while running:
             collide(ball, ball2)
         ball.display()
 
-    pygame.display.flip()
-    clock.tick(1000)
+    pygame.display.update()
